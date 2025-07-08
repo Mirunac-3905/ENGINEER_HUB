@@ -168,21 +168,21 @@ const Layout = ({ children }) => {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
         <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               <Menu className="w-6 h-6 text-gray-600 dark:text-gray-400" />
             </button>
-            <div className="flex items-center space-x-4 flex-1">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                {navItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
-              </h2>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex-1">
+              {location.pathname === '/notes'
+                ? 'Skill Builder'
+                : navItems.find(item => item.path === location.pathname)?.label || 'Dashboard'}
+            </h2>
             {/* Profile Dropdown */}
             {currentUser && (
-              <div className="relative ml-4" ref={profileRef}>
+              <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setProfileOpen((v) => !v)}
                   className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
