@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+
+import { useState } from 'react';// 1. Local state for form input
+import { useAuth } from '../contexts/AuthContext';   // 2. Global context auth function  
+import { useNavigate } from 'react-router-dom';// 3. Navigation controller
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -8,10 +9,10 @@ const Login = () => {
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
-  const { signup, login, loginWithGoogle } = useAuth();
+const { signup, login } = useAuth();
   const navigate = useNavigate();
-
+// async () that allows your code to execute background tasks—like fetching data or reading files—without 
+// blocking the main thread.
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -19,7 +20,7 @@ const Login = () => {
 
     try {
       if (isSignup) {
-        await signup(email, password);
+        await signup(email, password);//await keyword pauses the code until the server responds.
       } else {
         await login(email, password);
       }
@@ -31,20 +32,7 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setError('');
-    setLoading(true);
-
-    try {
-      await loginWithGoogle();
-      navigate('/');
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
+ 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -109,7 +97,7 @@ const Login = () => {
               {loading ? 'Loading...' : (isSignup ? 'Sign up' : 'Sign in')}
             </button>
           </div>
-
+{/* 
           <div>
             <button
               type="button"
@@ -120,7 +108,7 @@ const Login = () => {
               <span className="mr-2">🔍</span>
               Continue with Google
             </button>
-          </div>
+          </div> */}
 
           <div className="text-center">
             <button

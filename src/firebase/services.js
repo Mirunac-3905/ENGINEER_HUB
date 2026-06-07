@@ -11,15 +11,21 @@ import {
   where,
   serverTimestamp 
 } from 'firebase/firestore';
-import { db } from './config';
+import { db, auth } from './config';
 
 // Projects Service
 export const projectsService = {
   // Add a new project
   async addProject(projectData) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to add projects');
+      }
+      
       const docRef = await addDoc(collection(db, 'projects'), {
         ...projectData,
+        userId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -33,6 +39,11 @@ export const projectsService = {
   // Update a project
   async updateProject(projectId, updates) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to update projects');
+      }
+      
       const projectRef = doc(db, 'projects', projectId);
       await updateDoc(projectRef, {
         ...updates,
@@ -47,6 +58,11 @@ export const projectsService = {
   // Delete a project
   async deleteProject(projectId) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to delete projects');
+      }
+      
       await deleteDoc(doc(db, 'projects', projectId));
     } catch (error) {
       console.error('Error deleting project:', error);
@@ -56,14 +72,32 @@ export const projectsService = {
 
   // Get real-time projects
   getProjectsRealtime(callback) {
-    const q = query(collection(db, 'projects'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snapshot) => {
-      const projects = [];
-      snapshot.forEach((doc) => {
-        projects.push({ id: doc.id, ...doc.data() });
-      });
-      callback(projects);
-    });
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn('User not authenticated, returning empty projects');
+      callback([]);
+      return () => {}; // Return empty unsubscribe function
+    }
+    
+    const q = query(
+      collection(db, 'projects'), 
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, 
+      (snapshot) => {
+        const projects = [];
+        snapshot.forEach((doc) => {
+          projects.push({ id: doc.id, ...doc.data() });
+        });
+        callback(projects);
+      },
+      (error) => {
+        console.error('Error fetching projects:', error);
+        callback([]);
+      }
+    );
   }
 };
 
@@ -71,8 +105,14 @@ export const projectsService = {
 export const tasksService = {
   async addTask(taskData) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to add tasks');
+      }
+      
       const docRef = await addDoc(collection(db, 'tasks'), {
         ...taskData,
+        userId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -85,6 +125,11 @@ export const tasksService = {
 
   async updateTask(taskId, updates) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to update tasks');
+      }
+      
       const taskRef = doc(db, 'tasks', taskId);
       await updateDoc(taskRef, {
         ...updates,
@@ -98,6 +143,11 @@ export const tasksService = {
 
   async deleteTask(taskId) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to delete tasks');
+      }
+      
       await deleteDoc(doc(db, 'tasks', taskId));
     } catch (error) {
       console.error('Error deleting task:', error);
@@ -106,14 +156,32 @@ export const tasksService = {
   },
 
   getTasksRealtime(callback) {
-    const q = query(collection(db, 'tasks'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snapshot) => {
-      const tasks = [];
-      snapshot.forEach((doc) => {
-        tasks.push({ id: doc.id, ...doc.data() });
-      });
-      callback(tasks);
-    });
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn('User not authenticated, returning empty tasks');
+      callback([]);
+      return () => {};
+    }
+    
+    const q = query(
+      collection(db, 'tasks'), 
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, 
+      (snapshot) => {
+        const tasks = [];
+        snapshot.forEach((doc) => {
+          tasks.push({ id: doc.id, ...doc.data() });
+        });
+        callback(tasks);
+      },
+      (error) => {
+        console.error('Error fetching tasks:', error);
+        callback([]);
+      }
+    );
   }
 };
 
@@ -121,8 +189,14 @@ export const tasksService = {
 export const learningService = {
   async addLearningItem(itemData) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to add learning items');
+      }
+      
       const docRef = await addDoc(collection(db, 'learning'), {
         ...itemData,
+        userId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -135,6 +209,11 @@ export const learningService = {
 
   async updateLearningItem(itemId, updates) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to update learning items');
+      }
+      
       const itemRef = doc(db, 'learning', itemId);
       await updateDoc(itemRef, {
         ...updates,
@@ -148,6 +227,11 @@ export const learningService = {
 
   async deleteLearningItem(itemId) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to delete learning items');
+      }
+      
       await deleteDoc(doc(db, 'learning', itemId));
     } catch (error) {
       console.error('Error deleting learning item:', error);
@@ -156,14 +240,32 @@ export const learningService = {
   },
 
   getLearningItemsRealtime(callback) {
-    const q = query(collection(db, 'learning'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snapshot) => {
-      const items = [];
-      snapshot.forEach((doc) => {
-        items.push({ id: doc.id, ...doc.data() });
-      });
-      callback(items);
-    });
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn('User not authenticated, returning empty learning items');
+      callback([]);
+      return () => {};
+    }
+    
+    const q = query(
+      collection(db, 'learning'), 
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, 
+      (snapshot) => {
+        const items = [];
+        snapshot.forEach((doc) => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        callback(items);
+      },
+      (error) => {
+        console.error('Error fetching learning items:', error);
+        callback([]);
+      }
+    );
   }
 };
 
@@ -171,8 +273,14 @@ export const learningService = {
 export const notesService = {
   async addNote(noteData) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to add notes');
+      }
+      
       const docRef = await addDoc(collection(db, 'notes'), {
         ...noteData,
+        userId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -185,6 +293,11 @@ export const notesService = {
 
   async updateNote(noteId, updates) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to update notes');
+      }
+      
       const noteRef = doc(db, 'notes', noteId);
       await updateDoc(noteRef, {
         ...updates,
@@ -198,6 +311,11 @@ export const notesService = {
 
   async deleteNote(noteId) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to delete notes');
+      }
+      
       await deleteDoc(doc(db, 'notes', noteId));
     } catch (error) {
       console.error('Error deleting note:', error);
@@ -206,14 +324,32 @@ export const notesService = {
   },
 
   getNotesRealtime(callback) {
-    const q = query(collection(db, 'notes'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snapshot) => {
-      const notes = [];
-      snapshot.forEach((doc) => {
-        notes.push({ id: doc.id, ...doc.data() });
-      });
-      callback(notes);
-    });
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn('User not authenticated, returning empty notes');
+      callback([]);
+      return () => {};
+    }
+    
+    const q = query(
+      collection(db, 'notes'), 
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, 
+      (snapshot) => {
+        const notes = [];
+        snapshot.forEach((doc) => {
+          notes.push({ id: doc.id, ...doc.data() });
+        });
+        callback(notes);
+      },
+      (error) => {
+        console.error('Error fetching notes:', error);
+        callback([]);
+      }
+    );
   }
 };
 
@@ -221,8 +357,14 @@ export const notesService = {
 export const careerService = {
   async addCareerItem(itemData) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to add career items');
+      }
+      
       const docRef = await addDoc(collection(db, 'career'), {
         ...itemData,
+        userId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -235,6 +377,11 @@ export const careerService = {
 
   async updateCareerItem(itemId, updates) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to update career items');
+      }
+      
       const itemRef = doc(db, 'career', itemId);
       await updateDoc(itemRef, {
         ...updates,
@@ -248,6 +395,11 @@ export const careerService = {
 
   async deleteCareerItem(itemId) {
     try {
+      const user = auth.currentUser;
+      if (!user) {
+        throw new Error('User must be authenticated to delete career items');
+      }
+      
       await deleteDoc(doc(db, 'career', itemId));
     } catch (error) {
       console.error('Error deleting career item:', error);
@@ -256,13 +408,31 @@ export const careerService = {
   },
 
   getCareerItemsRealtime(callback) {
-    const q = query(collection(db, 'career'), orderBy('createdAt', 'desc'));
-    return onSnapshot(q, (snapshot) => {
-      const items = [];
-      snapshot.forEach((doc) => {
-        items.push({ id: doc.id, ...doc.data() });
-      });
-      callback(items);
-    });
+    const user = auth.currentUser;
+    if (!user) {
+      console.warn('User not authenticated, returning empty career items');
+      callback([]);
+      return () => {};
+    }
+    
+    const q = query(
+      collection(db, 'career'), 
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+    
+    return onSnapshot(q, 
+      (snapshot) => {
+        const items = [];
+        snapshot.forEach((doc) => {
+          items.push({ id: doc.id, ...doc.data() });
+        });
+        callback(items);
+      },
+      (error) => {
+        console.error('Error fetching career items:', error);
+        callback([]);
+      }
+    );
   }
 }; 

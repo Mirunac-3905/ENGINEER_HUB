@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { projectsService, tasksService, learningService, notesService, careerService } from '../firebase/services';
-
+import { projectService } from "../services/projectService";
+import { taskService } from "../services/taskService";
 export const useFirebaseData = (dataType) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,20 +13,36 @@ export const useFirebaseData = (dataType) => {
     const setupRealtimeListener = () => {
       try {
         switch (dataType) {
-          case 'projects':
-            unsubscribe = projectsService.getProjectsRealtime((projects) => {
-              setData(projects);
-              setLoading(false);
-              setError(null);
-            });
-            break;
-          case 'tasks':
-            unsubscribe = tasksService.getTasksRealtime((tasks) => {
-              setData(tasks);
-              setLoading(false);
-              setError(null);
-            });
-            break;
+          case "projects":
+  projectService
+    .getProjects()
+    .then((projects) => {
+      setData(projects);
+      setLoading(false);
+      setError(null);
+    })
+    .catch((err) => {
+      setError(err);
+      setLoading(false);
+    });
+
+  unsubscribe = () => {};
+  break;
+         case "tasks":
+  taskService
+    .getTasks()
+    .then((tasks) => {
+      setData(tasks);
+      setLoading(false);
+      setError(null);
+    })
+    .catch((err) => {
+      setError(err);
+      setLoading(false);
+    });
+
+  unsubscribe = () => {};
+  break;
           case 'learning':
             unsubscribe = learningService.getLearningItemsRealtime((items) => {
               setData(items);
@@ -71,9 +88,14 @@ export const useFirebaseData = (dataType) => {
       setError(null);
       switch (dataType) {
         case 'projects':
-          return await projectsService.addProject(itemData);
-        case 'tasks':
-          return await tasksService.addTask(itemData);
+  return await projectService.addProject(itemData);
+        case 'tasks': {
+  const newTask = await taskService.addTask(itemData);
+
+  setData(prev => [...prev, newTask]);
+
+  return newTask;
+}
         case 'learning':
           return await learningService.addLearningItem(itemData);
         case 'notes':
@@ -90,36 +112,73 @@ export const useFirebaseData = (dataType) => {
   };
 
   const updateItem = async (itemId, updates) => {
-    try {
-      setError(null);
-      switch (dataType) {
-        case 'projects':
-          return await projectsService.updateProject(itemId, updates);
-        case 'tasks':
-          return await tasksService.updateTask(itemId, updates);
-        case 'learning':
-          return await learningService.updateLearningItem(itemId, updates);
-        case 'notes':
-          return await notesService.updateNote(itemId, updates);
-        case 'career':
-          return await careerService.updateCareerItem(itemId, updates);
-        default:
-          throw new Error(`Unknown data type: ${dataType}`);
+  try {
+    setError(null);
+
+    switch (dataType) {
+      case 'projects': {
+        const updatedProject =
+          await projectService.updateProject(
+            itemId,
+            updates
+          );
+
+        setData(prev =>
+          prev.map(project =>
+            project.id === itemId
+              ? updatedProject
+              : project
+          )
+        );
+
+        return updatedProject;
       }
-    } catch (err) {
-      setError(err);
-      throw err;
+
+      case 'tasks': {
+  const updatedTask = await taskService.updateTask(itemId, updates);
+
+  setData(prev =>
+    prev.map(task =>
+      task.id === itemId ? updatedTask : task
+    )
+  );
+
+  return updatedTask;
+}
+
+      case 'learning':
+        return await learningService.updateLearningItem(itemId, updates);
+
+      case 'notes':
+        return await notesService.updateNote(itemId, updates);
+
+      case 'career':
+        return await careerService.updateCareerItem(itemId, updates);
+
+      default:
+        throw new Error(`Unknown data type: ${dataType}`);
     }
-  };
+  } catch (err) {
+    setError(err);
+    throw err;
+  }
+};
 
   const deleteItem = async (itemId) => {
     try {
       setError(null);
       switch (dataType) {
-        case 'projects':
-          return await projectsService.deleteProject(itemId);
-        case 'tasks':
-          return await tasksService.deleteTask(itemId);
+       case 'projects':
+  return await projectService.deleteProject(itemId);
+       case 'tasks': {
+  await taskService.deleteTask(itemId);
+
+  setData(prev =>
+    prev.filter(task => task.id !== itemId)
+  );
+
+  return true;
+}
         case 'learning':
           return await learningService.deleteLearningItem(itemId);
         case 'notes':

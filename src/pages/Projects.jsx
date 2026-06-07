@@ -185,7 +185,7 @@ const Projects = () => {
   const searchedProjects = filteredProjects.filter(project =>
     project.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    project.techStack.some(tech => tech.toLowerCase().includes(searchQuery.toLowerCase()))
+    (Array.isArray(project.techStack) ? project.techStack.some(tech => tech.toLowerCase().includes(searchQuery.toLowerCase())) : false)
   )
 
   const addNoteItem = async (projectId, noteType) => {
@@ -483,7 +483,7 @@ const Projects = () => {
                       Tech Stack:
                     </p>
                     <div className="flex flex-wrap gap-1">
-                      {techStack.map((tech, index) => (
+                      {techStack.length > 0 ? techStack.map((tech, index) => (
                         <span
                           key={index}
                           className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs rounded flex items-center gap-1"
@@ -491,7 +491,9 @@ const Projects = () => {
                           <span>{getTechIcon(tech)}</span>
                           {tech}
                         </span>
-                      ))}
+                      )) : (
+                        <span className="text-gray-500 text-xs">No tech stack specified</span>
+                      )}
                     </div>
                   </div>
                   {tags && tags.length > 0 && (
@@ -870,7 +872,7 @@ const Projects = () => {
                               Tech Stack
                             </p>
                             <div className="flex flex-wrap gap-2">
-                              {currentProject.techStack.map((tech, index) => (
+                              {Array.isArray(currentProject.techStack) && currentProject.techStack.length > 0 ? currentProject.techStack.map((tech, index) => (
                                 <span
                                   key={index}
                                   className="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm rounded flex items-center gap-1"
@@ -878,7 +880,9 @@ const Projects = () => {
                                   <span>{getTechIcon(tech)}</span>
                                   {tech}
                                 </span>
-                              ))}
+                              )) : (
+                                <span className="text-gray-500 text-sm">No tech stack specified</span>
+                              )}
                             </div>
                           </div>
 

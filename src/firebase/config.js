@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getAnalytics } from 'firebase/analytics';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 
 // Your Firebase configuration from Firebase Console
 const firebaseConfig = {
@@ -23,6 +23,17 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
-export const analytics = getAnalytics(app);
+
+// Initialize Analytics only if supported (handles SSR and localhost issues)
+let analytics = null;
+isSupported().then((supported) => {
+  if (supported && typeof window !== 'undefined') {
+    analytics = getAnalytics(app);
+  }
+}).catch((error) => {
+  console.warn('Analytics not supported:', error);
+});
+
+export { analytics };
 
 export default app; 
