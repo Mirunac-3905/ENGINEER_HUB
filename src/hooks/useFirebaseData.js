@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { projectsService, tasksService, learningService, notesService, careerService } from '../firebase/services';
+import { notesService, careerService } from '../firebase/services';
 import { projectService } from "../services/projectService";
 import { taskService } from "../services/taskService";
+import { learningService } from "../services/learningService";
 export const useFirebaseData = (dataType) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,13 +44,20 @@ export const useFirebaseData = (dataType) => {
 
   unsubscribe = () => {};
   break;
-          case 'learning':
-            unsubscribe = learningService.getLearningItemsRealtime((items) => {
-              setData(items);
-              setLoading(false);
-              setError(null);
-            });
-            break;
+          case "learning":
+  learningService
+    .getTopics()
+    .then((topics) => {
+      setData(topics);
+      setLoading(false);
+    })
+    .catch((err) => {
+      setError(err);
+      setLoading(false);
+    });
+
+  unsubscribe = () => {};
+  break;
           case 'notes':
             unsubscribe = notesService.getNotesRealtime((notes) => {
               setData(notes);
@@ -97,7 +105,7 @@ export const useFirebaseData = (dataType) => {
   return newTask;
 }
         case 'learning':
-          return await learningService.addLearningItem(itemData);
+          return await learningService.addTopic(itemData);
         case 'notes':
           return await notesService.addNote(itemData);
         case 'career':
@@ -146,9 +154,11 @@ export const useFirebaseData = (dataType) => {
   return updatedTask;
 }
 
-      case 'learning':
-        return await learningService.updateLearningItem(itemId, updates);
-
+      case "learning":
+  return await learningService.updateTopic(
+    itemId,
+    updates
+  );
       case 'notes':
         return await notesService.updateNote(itemId, updates);
 
@@ -179,8 +189,10 @@ export const useFirebaseData = (dataType) => {
 
   return true;
 }
-        case 'learning':
-          return await learningService.deleteLearningItem(itemId);
+        case "learning":
+  return await learningService.deleteTopic(
+    itemId
+  );
         case 'notes':
           return await notesService.deleteNote(itemId);
         case 'career':

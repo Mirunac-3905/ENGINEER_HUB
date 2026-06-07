@@ -9,6 +9,9 @@ import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import Tasks from './pages/Tasks'
 import Learning from './pages/Learning'
+import LearningTopicNotes from './pages/LearningTopicNotes'
+import LearningTopicQuestions from './pages/LearningTopicQuestions'
+import LearningTopicMistakes from './pages/LearningTopicMistakes'
 import Notes from './pages/Notes'
 import Career from './pages/Career'
 import MiniDemoPage from './pages/MiniDemoPage'
@@ -101,6 +104,34 @@ function AppRoutes() {
           <ProtectedRoute>
             <Layout>
               <Learning />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/learning/topic/:id/notes" element={
+          <ProtectedRoute>
+            <Layout>
+              <LearningTopicNotes />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/learning/topic/:id/notes/:noteId" element={
+          <ProtectedRoute>
+            <Layout>
+              <LearningTopicNotes />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/learning/topic/:id/questions" element={
+          <ProtectedRoute>
+            <Layout>
+              <LearningTopicQuestions />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/learning/topic/:id/mistakes" element={
+          <ProtectedRoute>
+            <Layout>
+              <LearningTopicMistakes />
             </Layout>
           </ProtectedRoute>
         } />
