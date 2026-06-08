@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { learningService } from "../services/learningService"
 
 const PROFILE_PLATFORMS = [
-  { id: 'leetcode', name: 'LeetCode', url: 'https://leetcode.com/miru' },
+  { id: 'leetcode', name: 'LeetCode', url: '' },
   { id: 'codechef', name: 'CodeChef', url: 'https://www.codechef.com/users/miru' },
   { id: 'hackerrank', name: 'HackerRank', url: 'https://www.hackerrank.com/miru' },
   { id: 'codingninjas', name: 'Coding Ninjas', url: 'https://www.codingninjas.com/users/miru' },
@@ -62,11 +62,23 @@ const topicStatus = (confidence) => {
 
 const Learning = () => {
   const navigate = useNavigate()
-  const [profiles, setProfiles] = useState(PROFILE_PLATFORMS)
+  const [profiles, setProfiles] = useState(() => {
+    if (typeof window === 'undefined') return PROFILE_PLATFORMS
+    const saved = localStorage.getItem('learningProfiles')
+    return saved ? JSON.parse(saved) : PROFILE_PLATFORMS
+  })
   const [profileEditor, setProfileEditor] = useState({ id: '', name: '', url: '' })
   const [showProfileEditor, setShowProfileEditor] = useState(false)
-  const [streak, setStreak] = useState({ current: 15, longest: 45, lastPractice: null })
-  const [points, setPoints] = useState(560)
+  const [streak, setStreak] = useState(() => {
+    if (typeof window === 'undefined') return { current: 15, longest: 45, lastPractice: null }
+    const saved = localStorage.getItem('learningStreak')
+    return saved ? JSON.parse(saved) : { current: 15, longest: 45, lastPractice: null }
+  })
+  const [points, setPoints] = useState(() => {
+    if (typeof window === 'undefined') return 560
+    const saved = localStorage.getItem('learningPoints')
+    return saved ? Number(saved) : 560
+  })
   const [topics, setTopics] = useState([])
   const [interestTopics, setInterestTopics] = useState(INITIAL_INTEREST)
   const [search, setSearch] = useState('')
@@ -78,24 +90,72 @@ const Learning = () => {
   const [showInterestForm, setShowInterestForm] = useState(false)
   const [interestForm, setInterestForm] = useState({ id: '', title: '', category: 'Salesforce', notes: '', takeaways: '', confidence: 3 })
   const [notification, setNotification] = useState(`Don't break your streak today 🔥`)
+  const [todayString, setTodayString] = useState(new Date().toISOString().slice(0, 10))
 
   useEffect(() => {
     document.title = 'Placement Preparation Dashboard — Learning'
   }, [])
 
-  const handleMarkPractice = () => {
-    const today = new Date().toISOString().slice(0, 10)
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTodayString(new Date().toISOString().slice(0, 10))
+    }, 60000)
+    return () => clearInterval(timer)
+  }, [])
+
+  useEffect(() => {
+    localStorage.setItem('learningProfiles', JSON.stringify(profiles))
+  }, [profiles])
+
+  useEffect(() => {
+    localStorage.setItem('learningStreak', JSON.stringify(streak))
+    localStorage.setItem('learningPoints', String(points))
+  }, [streak, points])
+
+  const isValidProfileUrl = (url) => {
+    if (!url) return false
+    try {
+      new URL(url)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const markPractice = (today = null) => {
+    const currentDay = today || new Date().toISOString().slice(0, 10)
     const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+
+    if (streak.lastPractice === currentDay) {
+      setNotification("You've already logged today's practice.")
+      return
+    }
+
     const nextStreak = streak.lastPractice === yesterday ? streak.current + 1 : 1
     const nextLongest = Math.max(streak.longest, nextStreak)
 
-    setStreak({ current: nextStreak, longest: nextLongest, lastPractice: today })
+    setStreak({ current: nextStreak, longest: nextLongest, lastPractice: currentDay })
     setPoints((prev) => prev + 20)
     setNotification(nextStreak === 1 ? 'Streak reset today — start strong again!' : `Nice! ${nextStreak} day streak unlocked.`)
   }
 
-  const handleOpenProfile = (url) => {
-    window.open(url, '_blank')
+  const handleMarkPractice = (event) => {
+    if (event?.preventDefault) event.preventDefault()
+    markPractice()
+  }
+
+  const handleOpenProfile = (profile) => {
+    if (!profile.url || !isValidProfileUrl(profile.url)) {
+      setNotification('Please enter a valid profile URL to open and track practice.')
+      return
+    }
+
+    const newVisit = todayString
+    window.open(profile.url, '_blank')
+    setProfiles((prev) => prev.map((item) => item.id === profile.id ? { ...item, lastVisited: newVisit } : item))
+    if (streak.lastPractice !== todayString) {
+      markPractice(todayString)
+    }
   }
 
   const handleEditProfile = (profile) => {
@@ -105,13 +165,24 @@ const Learning = () => {
 
   const saveProfile = (event) => {
     event.preventDefault()
-    if (!profileEditor.name || !profileEditor.url) return
+    const trimmedUrl = profileEditor.url.trim()
+
+    if (!profileEditor.name || !trimmedUrl || !isValidProfileUrl(trimmedUrl)) {
+      setNotification('Please enter a valid profile URL before saving.')
+      return
+    }
+
+    const nextProfile = {
+      ...profileEditor,
+      url: trimmedUrl,
+      lastVisited: profileEditor.lastVisited || null
+    }
 
     setProfiles((prev) => {
       if (profileEditor.id) {
-        return prev.map((profile) => profile.id === profileEditor.id ? profileEditor : profile)
+        return prev.map((profile) => profile.id === profileEditor.id ? nextProfile : profile)
       }
-      return [{ ...profileEditor, id: Date.now().toString() }, ...prev]
+      return [{ ...nextProfile, id: Date.now().toString(), lastVisited: null }, ...prev]
     })
     setShowProfileEditor(false)
     setProfileEditor({ id: '', name: '', url: '' })
@@ -263,9 +334,10 @@ const Learning = () => {
                 <div key={profile.id} className="rounded-[24px] border border-white/10 bg-slate-950/80 p-5 shadow hover:-translate-y-1 transition">
                   <p className="text-sm uppercase tracking-[0.18em] text-gray-400">{profile.name}</p>
                   <div className="mt-5 flex flex-wrap gap-3">
-                    <button onClick={() => handleOpenProfile(profile.url)} className="rounded-2xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/15">Open</button>
+                    <button onClick={() => handleOpenProfile(profile)} className="rounded-2xl bg-white/10 px-4 py-2 text-sm text-white transition hover:bg-white/15">Open</button>
                     <button onClick={() => handleEditProfile(profile)} className="rounded-2xl border border-white/10 px-4 py-2 text-sm text-white transition hover:border-indigo-400">Edit</button>
                   </div>
+                  <p className="mt-4 text-sm text-gray-400">{profile.lastVisited === todayString ? 'Visited today' : profile.lastVisited ? `Last visited ${profile.lastVisited}` : 'No visit tracked yet'}</p>
                 </div>
               ))}
             </div>
@@ -279,7 +351,7 @@ const Learning = () => {
                   </label>
                   <label className="space-y-2 text-sm text-gray-300">
                     Profile URL
-                    <input value={profileEditor.url} onChange={(e) => setProfileEditor((prev) => ({ ...prev, url: e.target.value }))} className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-white outline-none focus:border-indigo-400" />
+                    <input value={profileEditor.url} onChange={(e) => setProfileEditor((prev) => ({ ...prev, url: e.target.value }))} placeholder="https://leetcode.com/yourusername" className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-white outline-none focus:border-indigo-400" />
                   </label>
                 </div>
                 <div className="mt-4 flex flex-wrap gap-3">

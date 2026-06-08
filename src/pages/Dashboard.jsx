@@ -15,19 +15,37 @@ import {
   Lightbulb
 } from 'lucide-react'
 import { useFirebaseData } from '../hooks/useFirebaseData'
+import { useEffect, useState } from 'react'
+import { researchService } from '../services/researchService'
 
 const Dashboard = () => {
   // Fetch real data
   const { data: projects = [], loading: loadingProjects } = useFirebaseData('projects');
   const { data: tasks = [], loading: loadingTasks } = useFirebaseData('tasks');
   const { data: learning = [], loading: loadingLearning } = useFirebaseData('learning');
-  const { data: career = [], loading: loadingCareer } = useFirebaseData('career');
+  const [research, setResearch] = useState([])
+  const [loadingResearch, setLoadingResearch] = useState(true)
+
+  useEffect(() => {
+    const loadResearch = async () => {
+      try {
+        const items = await researchService.getResearchTopics()
+        setResearch(items)
+      } catch (error) {
+        console.error('Error loading research topics:', error)
+      } finally {
+        setLoadingResearch(false)
+      }
+    }
+
+    loadResearch()
+  }, [])
 
   // Calculate stats
   const totalProjects = projects.length;
   const activeTasks = tasks.filter(t => t.status === 'active' || t.status === 'Active').length;
   const learningTopics = learning.length;
-  const applications = career.length;
+  const researchTopics = research.length;
 
   // Calculate changes (dummy for now, can be improved with timestamps)
   const stats = [
@@ -56,8 +74,8 @@ const Dashboard = () => {
       changeColor: 'text-green-600'
     },
     { 
-      title: 'Applications', 
-      value: loadingCareer ? '...' : applications, 
+      title: 'Research Topics', 
+      value: loadingResearch ? '...' : researchTopics, 
       icon: Target, 
       color: 'bg-gradient-to-r from-purple-500 to-pink-500',
       change: '',
@@ -88,9 +106,9 @@ const Dashboard = () => {
       icon: TrendingUp,
       color: 'text-green-600',
     })),
-    ...career.map(c => ({
-      type: 'Career',
-      title: c.title || 'Untitled Career',
+    ...research.map(c => ({
+      type: 'Research',
+      title: c.title || 'Untitled Research',
       time: c.updatedAt || c.createdAt || '',
       icon: Target,
       color: 'text-purple-600',
@@ -123,6 +141,13 @@ const Dashboard = () => {
       icon: TrendingUp,
       color: 'bg-purple-500 hover:bg-purple-600',
       link: '/learning'
+    },
+    {
+      title: 'Capture Research',
+      description: 'Add a new research topic',
+      icon: BookOpen,
+      color: 'bg-indigo-500 hover:bg-indigo-600',
+      link: '/research'
     }
   ];
 

@@ -6,6 +6,7 @@ import authRoutes from "./routes/authRoutes.js";
 import projectRoutes from "./routes/projectRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import learningRoutes from "./routes/learningRoutes.js";
+import researchRoutes from "./routes/researchRoutes.js";
 dotenv.config();
 const app = express();
 
@@ -20,6 +21,7 @@ app.use(
   "/api/learning",
   learningRoutes
 );
+app.use("/api/research", researchRoutes);
 app.get("/", (req, res) => {
   res.send("Engineer Hub Backend Running");
 });

@@ -44,7 +44,7 @@ const Layout = ({ children }) => {
     { path: '/tasks', label: 'Tasks', icon: CheckSquare },
     { path: '/learning', label: 'Learning', icon: BookOpen },
     { path: '/notes', label: 'Notes', icon: Brain },
-    { path: '/career', label: 'Career', icon: Target },
+    { path: '/research', label: 'Research', icon: Target },
   ]
 
   const handleLogout = async () => {

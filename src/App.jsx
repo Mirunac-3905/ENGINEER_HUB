@@ -13,7 +13,8 @@ import LearningTopicNotes from './pages/LearningTopicNotes'
 import LearningTopicQuestions from './pages/LearningTopicQuestions'
 import LearningTopicMistakes from './pages/LearningTopicMistakes'
 import Notes from './pages/Notes'
-import Career from './pages/Career'
+import ResearchHub from './pages/ResearchHub'
+import ResearchDetail from './pages/ResearchDetail'
 import MiniDemoPage from './pages/MiniDemoPage'
 import MiniDemoManager from './pages/MiniDemoManager'
 import React from 'react'
@@ -142,10 +143,17 @@ function AppRoutes() {
             </Layout>
           </ProtectedRoute>
         } />
-        <Route path="/career" element={
+        <Route path="/research" element={
           <ProtectedRoute>
             <Layout>
-              <Career />
+              <ResearchHub />
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/research/:id" element={
+          <ProtectedRoute>
+            <Layout>
+              <ResearchDetail />
             </Layout>
           </ProtectedRoute>
         } />
